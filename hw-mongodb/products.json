@@ -1,0 +1,8 @@
+[
+  {"name": "Laptop Pro", "brand": "TechCorp", "price": 1500, "category": "electronics", "tags": ["powerful", "professional", "15-inch"], "in_stock": true, "stock_count": 50},
+  {"name": "Gaming Mouse", "brand": "GamerGear", "price": 80, "category": "peripherals", "tags": ["rgb", "fast", "ergonomic"], "in_stock": true, "stock_count": 200},
+  {"name": "Wireless Keyboard", "brand": "TechCorp", "price": 120, "category": "peripherals", "tags": ["bluetooth", "mechanical", "compact"], "in_stock": false, "stock_count": 0},
+  {"name": "4K Monitor", "brand": "ViewSonic", "price": 450, "category": "electronics", "tags": ["4k", "27-inch", "ips"], "in_stock": true, "stock_count": 75},
+  {"name": "Webcam HD", "brand": "GamerGear", "price": 60, "category": "peripherals", "tags": ["1080p", "streaming"], "in_stock": true, "stock_count": 150},
+  {"name": "Smartphone X", "brand": "TechCorp", "price": 900, "category": "electronics", "tags": ["5g", "oled", "camera"], "in_stock": false, "stock_count": 0}
+]

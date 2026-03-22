@@ -2,196 +2,182 @@
 
 ## Exercise 1
 
-```
+```prolog
 s(X,Y) :- u(V,W), v(W,X), v(W,Y), not(X=Y).
 r(X,Y) :- s(X,X), t(Y), not(s(Y,Y)).
 ```
 
-EDB: `u(V,W)`, `v(A,B)`, `t(Y)`. IDB: `s`, `r`.
+**EDB:** `u(V,W)`, `v(A,B)`, `t(Y)` — **IDB:** `s`, `r`
 
-**Stratification:** `s` only uses EDB + built-in `not(X=Y)`. `r` negates `s`, but `s` doesn't depend on `r`.
+**Stratification:** `s` only uses EDB and the built-in `not(X=Y)`. `r` negates `s`, but `s` does not depend on `r`. The strata are therefore:
 
-Strata: {t, u, v} -> {s} -> {r}.
+$$\{t,\ u,\ v\} \;\to\; \{s\} \;\to\; \{r\}$$
 
-**RA for `s(X,Y)`:**
+-----
 
-Rename two copies of v:
-- V1 = ρ_{W,X}(v)
-- V2 = ρ_{W,Y}(v)
+### Relational Algebra for `s(X,Y)`
 
-```
-s = π_{X,Y}( σ_{X ≠ Y}( U ⋈_W V1 ⋈_W V2 ))
-```
+Rename two copies of `v`:
 
-Join u with both copies on W, filter X ≠ Y, project on X, Y.
+$$V_1 = \rho_{W,X}(v), \qquad V_2 = \rho_{W,Y}(v)$$
 
-**RA for `r(X,Y)`:**
+$$s \;=\; \pi_{X,Y}\!\left(\, \sigma_{X \neq Y}\!\left( U \bowtie_W V_1 \bowtie_W V_2 \right) \right)$$
 
-`s(X,X)` = diagonal of s, `not(s(Y,Y))` = values in t not on the diagonal.
+Join `u` with both copies on $W$, filter $X \neq Y$, then project onto $X, Y$.
 
-```
-D = π_X( σ_{X=Y}(S) )
-r = D × (T - D)
-```
+-----
+
+### Relational Algebra for `r(X,Y)`
+
+`s(X,X)` is the diagonal of `s`; `not(s(Y,Y))` selects values in `t` that are not on the diagonal.
+
+$$D \;=\; \pi_X\!\left(\, \sigma_{X=Y}(S) \right)$$
+
+$$r \;=\; D \;\times\; (T - D)$$
+
+-----
 
 ## Exercise 2
 
-```
+```prolog
 bi(X,Y) :- g(X,Y).
 bi(Y,X) :- g(X,Y).
 even(X,Y) :- bi(X,Z), bi(Z,Y).
 even(X,Y) :- bi(X,U), bi(U,V), even(V,Y).
 ```
 
-g = {(a,b), (b,c), (c,d), (d,e), (e,f), (f,g)} - a path a-b-c-d-e-f-g.
+$g = \{(a,b),(b,c),(c,d),(d,e),(e,f),(f,g)\}$ — a path $a$–$b$–$c$–$d$–$e$–$f$–$g$.
 
-Symmetric closure:
+**Symmetric closure:**
 
-```
-bi = g ∪ ρ_{Y,X}(g)
-   = {(a,b), (b,a), (b,c), (c,b), (c,d), (d,c),
-      (d,e), (e,d), (e,f), (f,e), (f,g), (g,f)}
-```
+$$bi = g \cup \rho_{Y,X}(g) = \{(a,b),(b,a),(b,c),(c,b),(c,d),(d,c),(d,e),(e,d),(e,f),(f,e),(f,g),(g,f)\}$$
 
-RA for the rules:
+**Relational algebra for the rules:**
 
-```
-E1 = π_{X,Y}( BI(X,Z) ⋈_Z BI(Z,Y) )
-E2 = π_{X,Y}( BI(X,U) ⋈_U BI(U,V) ⋈_V EVEN(V,Y) )
-```
+$$E_1 = \pi_{X,Y}\!\left( BI(X,Z) \bowtie_Z BI(Z,Y) \right)$$
 
-### (a) Naive recursion
+$$E_2 = \pi_{X,Y}\!\left( BI(X,U) \bowtie_U BI(U,V) \bowtie_V \mathit{EVEN}(V,Y) \right)$$
 
-**Iteration 0:** even_0 = {}
+-----
 
-**Iteration 1:** even_0 is empty so E2 produces nothing. Only E1 fires.
+### (a) Naive Recursion
 
-For each Z, pair (X,Z) with (Z,Y) tuples:
+**Iteration 0:** $\mathit{even}_0 = \emptyset$
+
+**Iteration 1:** $\mathit{even}_0$ is empty, so $E_2$ produces nothing. Only $E_1$ fires. For each intermediate node $Z$, pairing $(X,Z) \in bi$ with $(Z,Y) \in bi$:
 
 ```
-Z=a: (b,a) × (a,b) -> (b,b)
-Z=b: (a,b),(c,b) × (b,a),(b,c) -> (a,a),(a,c),(c,a),(c,c)
-Z=c: (b,c),(d,c) × (c,b),(c,d) -> (b,b),(b,d),(d,b),(d,d)
-Z=d: (c,d),(e,d) × (d,c),(d,e) -> (c,c),(c,e),(e,c),(e,e)
-Z=e: (d,e),(f,e) × (e,d),(e,f) -> (d,d),(d,f),(f,d),(f,f)
-Z=f: (e,f),(g,f) × (f,e),(f,g) -> (e,e),(e,g),(g,e),(g,g)
-Z=g: (f,g) × (g,f) -> (f,f)
+Z=a: (b,a) × (a,b)             → (b,b)
+Z=b: (a,b),(c,b) × (b,a),(b,c) → (a,a),(a,c),(c,a),(c,c)
+Z=c: (b,c),(d,c) × (c,b),(c,d) → (b,b),(b,d),(d,b),(d,d)
+Z=d: (c,d),(e,d) × (d,c),(d,e) → (c,c),(c,e),(e,c),(e,e)
+Z=e: (d,e),(f,e) × (e,d),(e,f) → (d,d),(d,f),(f,d),(f,f)
+Z=f: (e,f),(g,f) × (f,e),(f,g) → (e,e),(e,g),(g,e),(g,g)
+Z=g: (f,g)       × (g,f)       → (f,f)
 ```
 
-```
-even_1 = {(a,a),(a,c),(b,b),(b,d),(c,a),(c,c),(c,e),
-          (d,b),(d,d),(d,f),(e,c),(e,e),(e,g),
-          (f,d),(f,f),(g,e),(g,g)}
-```
+$$\mathit{even}_1 = \{(a,a),(a,c),(b,b),(b,d),(c,a),(c,c),(c,e),(d,b),(d,d),(d,f),(e,c),(e,e),(e,g),(f,d),(f,f),(g,e),(g,g)\}$$
 
-17 tuples - all pairs at distance 2.
+17 tuples — all pairs at distance 2.
 
-**Iteration 2:** E1 doesn't depend on even, produces same as before. E2 composes bi-bi paths with even_1, which is equivalent to composing even_1 with even_1.
+**Iteration 2:** $E_1$ is independent of `even` and reproduces the same result. $E_2$ composes `bi`–`bi` paths with $\mathit{even}_1$, which is equivalent to composing $\mathit{even}_1$ with itself:
 
 ```
-V=a: {a,c} × {a,c} -> (a,a),(a,c),(c,a),(c,c)
-V=b: {b,d} × {b,d} -> (b,b),(b,d),(d,b),(d,d)
-V=c: {a,c,e} × {a,c,e} -> includes (a,e),(e,a)
-V=d: {b,d,f} × {b,d,f} -> includes (b,f),(f,b)
-V=e: {c,e,g} × {c,e,g} -> includes (c,g),(g,c)
-V=f: {d,f} × {d,f} -> all known
-V=g: {e,g} × {e,g} -> all known
+V=c: {a,c,e} × {a,c,e} → includes (a,e),(e,a)
+V=d: {b,d,f} × {b,d,f} → includes (b,f),(f,b)
+V=e: {c,e,g} × {c,e,g} → includes (c,g),(g,c)
 ```
 
-New tuples: {(a,e), (e,a), (b,f), (f,b), (c,g), (g,c)} - distance-4 pairs.
+New tuples: $\{(a,e),(e,a),(b,f),(f,b),(c,g),(g,c)\}$ — distance-4 pairs.
 
-```
-even_2 = even_1 ∪ {(a,e),(e,a),(b,f),(f,b),(c,g),(g,c)}
-```
+$$\mathit{even}_2 = \mathit{even}_1 \cup \{(a,e),(e,a),(b,f),(f,b),(c,g),(g,c)\}$$
 
-**Iteration 3:** Composing even_2 with even_2:
+**Iteration 3:** Composing $\mathit{even}_2$ with itself:
 
-- V=c: sources {a,c,e,g}, targets {a,c,e,g} -> (a,g),(g,a) NEW
-- V=e: same sources/targets -> same pairs, already found
-- All other V: no new tuples
+- $V = c$: sources $\{a,c,e,g\}$, targets $\{a,c,e,g\}$ $\Rightarrow$ $(a,g),(g,a)$ **NEW**
+- All other $V$: no new tuples.
 
-```
-even_3 = even_2 ∪ {(a,g),(g,a)}
-```
+$$\mathit{even}_3 = \mathit{even}_2 \cup \{(a,g),(g,a)\}$$
 
-Distance-6 pairs (a and g are 6 apart).
+Distance-6 pairs ($a$ and $g$ are 6 apart).
 
-**Iteration 4:** (a,g) composed with (g,*) = {a,c,e,g} - all known. No new tuples. **Stop.**
+**Iteration 4:** $(a,g)$ composed with $(g,*) = \{a,c,e,g\}$ — all already known. No new tuples. **Stop.**
 
-```
-even = {(a,a),(a,c),(a,e),(a,g),
-        (b,b),(b,d),(b,f),
-        (c,a),(c,c),(c,e),(c,g),
-        (d,b),(d,d),(d,f),
-        (e,a),(e,c),(e,e),(e,g),
-        (f,b),(f,d),(f,f),
-        (g,a),(g,c),(g,e),(g,g)}
-```
+$$\mathit{even} = \{(a,a),(a,c),(a,e),(a,g),(b,b),(b,d),(b,f),(c,a),(c,c),(c,e),(c,g),(d,b),(d,d),(d,f),(e,a),(e,c),(e,e),(e,g),(f,b),(f,d),(f,f),(g,a),(g,c),(g,e),(g,g)\}$$
 
-25 tuples total.
+**25 tuples total.**
 
-### (b) Semi-naive
+-----
 
-**Step 1:**
-```
-Δ1 = π_{X,Y}( BI(X,Z) ⋈_Z BI(Z,Y) )
-even1 = Δ1
-```
+### (b) Semi-Naive Evaluation
 
-**For i ≥ 1:**
-```
-Δ^{i+1} = π_{X,Y}( BI(X,U) ⋈_U BI(U,V) ⋈_V Δ^i(V,Y) ) - even^i
-even^{i+1} = even^i ∪ Δ^{i+1}
-```
-Iterate until Δ^{i+1} = ∅.
+**Step 1 (base):**
 
-**Step 0:** EVEN = E1 = 17 tuples (same as iteration 1 of naive). Δ = EVEN.
+$$\Delta^1 = \pi_{X,Y}\!\left( BI(X,Z) \bowtie_Z BI(Z,Y) \right), \qquad \mathit{even}^1 = \Delta^1$$
 
-**Step 1:** Join BI-BI with all 17 Δ tuples. After subtracting EVEN:
+**For $i \geq 1$:**
 
-Δ = {(a,e),(e,a),(b,f),(f,b),(c,g),(g,c)}, EVEN = 23 tuples.
+$$\Delta^{i+1} = \pi_{X,Y}\!\left( BI(X,U) \bowtie_U BI(U,V) \bowtie_V \Delta^i(V,Y) \right) - \mathit{even}^i$$
 
-**Step 2:** Only 6 tuples in Δ. For each new (V,Y), find all X that reach V via bi-bi:
+$$\mathit{even}^{i+1} = \mathit{even}^i \cup \Delta^{i+1}$$
 
-- (e,a): sources of e = {c,e,g} -> (g,a) NEW
-- (c,g): sources of c = {a,c,e} -> (a,g) NEW
-- Others produce only known tuples.
+Iterate until $\Delta^{i+1} = \emptyset$.
 
-Δ = {(g,a),(a,g)}, EVEN = 25 tuples.
+**Step 0:** $\mathit{EVEN} = E_1$ = 17 tuples (identical to naive iteration 1). $\Delta = \mathit{EVEN}$.
 
-**Step 3:** Only 2 tuples. (g,a) and (a,g) produce no new results. Δ = {}. **Stop.**
+**Step 1:** Join $BI$–$BI$ with all 17 $\Delta$ tuples. After subtracting $\mathit{EVEN}$:
+
+$$\Delta = \{(a,e),(e,a),(b,f),(f,b),(c,g),(g,c)\}, \qquad |\mathit{EVEN}| = 23$$
+
+**Step 2:** Only 6 tuples in $\Delta$. For each new $(V,Y)$, find all $X$ that reach $V$ via `bi`–`bi`:
+
+- $(e,a)$: sources of $e = \{c,e,g\}$ $\Rightarrow$ $(g,a)$ **NEW**
+- $(c,g)$: sources of $c = \{a,c,e\}$ $\Rightarrow$ $(a,g)$ **NEW**
+- All others produce only known tuples.
+
+$$\Delta = \{(g,a),(a,g)\}, \qquad |\mathit{EVEN}| = 25$$
+
+**Step 3:** Only 2 tuples. $(g,a)$ and $(a,g)$ produce no new results. $\Delta = \emptyset$. **Stop.**
+
+-----
 
 ## Exercise 3
 
-```
+```prolog
 reach(X,Y) :- g(X,Y).
 reach(X,Y) :- g(X,Z), reach(Z,Y).
 ```
 
-g = {(a,b), (b,c), (c,d), (d,e), (f,g), (g,h), (h,i), (b,i)}.
+$g = \{(a,b),(b,c),(c,d),(d,e),(f,g),(g,h),(h,i),(b,i)\}$
 
-### (a) Semi-naive is inefficient for `reach(c,Y)`
+-----
 
-Semi-naive computes the full transitive closure of g, i.e., all reachable pairs from every node. For this graph it would compute many irrelevant facts (paths from a, b, f, etc.), while only paths starting at c are needed. The answer is just {d, e}, but semi-naive produces 18 tuples total.
+### (a) Why Semi-Naive is Inefficient for `reach(c,Y)`
 
-### (b) Top-down evaluation of `reach(c,Y)`
+Semi-naive computes the full transitive closure of $g$ — i.e., all reachable pairs from every node. For this graph it would compute many irrelevant facts (paths from $a$, $b$, $f$, etc.), while only paths starting at $c$ are needed. The answer is simply $\{d, e\}$, yet semi-naive produces 18 tuples in total.
 
-- Goal: reach(c,Y).
-- Rule 1: g(c,Y) -> Y = d. Found reach(c,d).
-- Rule 2: g(c,Z) -> Z = d, subgoal reach(d,Y).
-  - Rule 1: g(d,Y) -> Y = e. Found reach(c,e).
-  - Rule 2: g(d,Z) -> Z = e, subgoal reach(e,Y).
-    - No g(e,*). Fail.
+-----
 
-Answers: Y = d and Y = e.
+### (b) Top-Down Evaluation of `reach(c,Y)`
 
-Only explored c -> d -> e, never touched a, b, f, g, h, i.
+- **Goal:** `reach(c,Y)`.
+- **Rule 1:** `g(c,Y)` $\Rightarrow$ $Y = d$. Found `reach(c,d)`.
+- **Rule 2:** `g(c,Z)` $\Rightarrow$ $Z = d$; subgoal `reach(d,Y)`.
+  - **Rule 1:** `g(d,Y)` $\Rightarrow$ $Y = e$. Found `reach(c,e)`.
+  - **Rule 2:** `g(d,Z)` $\Rightarrow$ $Z = e$; subgoal `reach(e,Y)`.
+    - No `g(e,*)`. Fail.
 
-### (c) Magic sets for `reach(c,Y)`
+**Answers:** $Y \in \{d, e\}$.
 
-X bound to c, Y free. Magic predicate tracks needed X values:
+Only the path $c \to d \to e$ was explored; nodes $a$, $b$, $f$, $g$, $h$, $i$ were never touched.
 
-```
+-----
+
+### (c) Magic Sets for `reach(c,Y)` — Pattern: bound/free (bf)
+
+$X$ bound to $c$, $Y$ free. The magic predicate tracks needed $X$ values:
+
+```prolog
 m(c).
 m(Z) :- m(X), g(X,Z).
 
@@ -199,26 +185,25 @@ reach(X,Y) :- m(X), g(X,Y).
 reach(X,Y) :- m(X), g(X,Z), reach(Z,Y).
 ```
 
-Computing m:
-- m(c)
-- g(c,d) -> m(d)
-- g(d,e) -> m(e)
-- g(e,*) -> nothing.
+**Computing $m$:** $m(c)$; $g(c,d) \Rightarrow m(d)$; $g(d,e) \Rightarrow m(e)$; no $g(e,*)$.
 
-m = {c, d, e}.
+$$m = \{c,\ d,\ e\}$$
 
-Computing reach:
-- Base: m(c),g(c,d) -> (c,d). m(d),g(d,e) -> (d,e). reach = {(c,d),(d,e)}.
-- Iter 1: m(c),g(c,d),reach(d,e) -> (c,e). Rest: nothing.
-- Iter 2: no new tuples. Stop.
+**Computing `reach`:**
 
-reach = {(c,d), (d,e), (c,e)}. Answer: Y in {d, e}.
+- Base: $m(c), g(c,d) \Rightarrow (c,d)$; $m(d), g(d,e) \Rightarrow (d,e)$. So $\mathit{reach} = \{(c,d),(d,e)\}$.
+- Iteration 1: $m(c), g(c,d), \mathit{reach}(d,e) \Rightarrow (c,e)$.
+- Iteration 2: no new tuples. Stop.
 
-### (d) Magic sets for `?reach(c,e)`
+$$\mathit{reach} = \{(c,d),\ (d,e),\ (c,e)\} \qquad \text{Answer: } Y \in \{d,\ e\}$$
 
-Both arguments bound. In rule 2, Z comes from g(X,Z) and Y is bound from the head, so the recursive call is also bb. Magic predicate tracks (X,Y) pairs:
+-----
 
-```
+### (d) Magic Sets for `reach(c,e)` — Pattern: bound/bound (bb)
+
+Both arguments bound. In rule 2, $Z$ comes from $g(X,Z)$ and $Y$ is bound from the head, so the recursive call is also bb. The magic predicate tracks $(X,Y)$ pairs:
+
+```prolog
 m(c,e).
 m(Z,Y) :- m(X,Y), g(X,Z).
 
@@ -226,40 +211,37 @@ reach(X,Y) :- m(X,Y), g(X,Y).
 reach(X,Y) :- m(X,Y), g(X,Z), reach(Z,Y).
 ```
 
-Computing m:
-- m(c,e)
-- g(c,d) -> m(d,e)
-- g(d,e) -> m(e,e)
-- g(e,*) -> nothing.
+**Computing $m$:** $m(c,e)$; $g(c,d) \Rightarrow m(d,e)$; $g(d,e) \Rightarrow m(e,e)$; no $g(e,*)$.
 
-m = {(c,e), (d,e), (e,e)}.
+$$m = \{(c,e),\ (d,e),\ (e,e)\}$$
 
-Base (check m(X,Y) and g(X,Y)):
-- m(d,e), g(d,e) -> reach(d,e). Others don't match.
+**Base** (check $m(X,Y)$ and $g(X,Y)$): $m(d,e), g(d,e) \Rightarrow \mathit{reach}(d,e)$.
 
-Iteration:
-- m(c,e), g(c,d), reach(d,e) -> reach(c,e).
-- Next iteration: no new. Stop.
+**Iteration:** $m(c,e), g(c,d), \mathit{reach}(d,e) \Rightarrow \mathit{reach}(c,e)$. Next iteration: no new tuples. Stop.
 
-Answer: reach(c,e) = YES.
+**Answer:** `reach(c,e)` = **YES**.
 
-### (e) Magic sets for `?reach(X,e)`
+-----
 
-X free, Y bound to e. The recursive call also has Y bound and X free (fb). Since Y = e never changes, the magic set is trivial:
+### (e) Magic Sets for `reach(X,e)` — Pattern: free/bound (fb)
 
-```
+$X$ free, $Y$ bound to $e$. The recursive call also has $Y$ bound and $X$ free (fb). Since $Y = e$ never changes, the magic set is trivial:
+
+```prolog
 m(e).
 
 reach(X,Y) :- m(Y), g(X,Y).
 reach(X,Y) :- m(Y), g(X,Z), reach(Z,Y).
 ```
 
-m = {e}.
+$$m = \{e\}$$
 
-- Base: g(d,e) -> reach(d,e).
-- Iter 1: g(c,d), reach(d,e) -> reach(c,e).
-- Iter 2: g(b,c), reach(c,e) -> reach(b,e).
-- Iter 3: g(a,b), reach(b,e) -> reach(a,e).
-- Iter 4: no g(*,a). Stop.
+**Computing `reach`:**
 
-Answer: X in {a, b, c, d}.
+- Base: $g(d,e) \Rightarrow \mathit{reach}(d,e)$.
+- Iteration 1: $g(c,d), \mathit{reach}(d,e) \Rightarrow \mathit{reach}(c,e)$.
+- Iteration 2: $g(b,c), \mathit{reach}(c,e) \Rightarrow \mathit{reach}(b,e)$.
+- Iteration 3: $g(a,b), \mathit{reach}(b,e) \Rightarrow \mathit{reach}(a,e)$.
+- Iteration 4: no $g(*,a)$. Stop.
+
+**Answer:** $X \in \{a,\ b,\ c,\ d\}$.

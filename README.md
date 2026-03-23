@@ -9,6 +9,6 @@
 | # | Тема | Папка |
 |---|------|-------|
 | 1 | MongoDB | [`hw1-mongodb/`](hw1-mongodb/) |
-| 2 | Datalog — безопасность, стратификация, минимальные модели | [`hw2-datalog-s4/`](hw2-datalog-s4/) |
-| 3 | Datalog — стратегии вычисления и оптимизация | [`hw3-datalog-s5/`](hw3-datalog-s5/) |
+| 2 | Datalog | [`hw2-datalog-s4/`](hw2-datalog-s4/) |
+| 3 | Datalog | [`hw3-datalog-s5/`](hw3-datalog-s5/) |
 | 4 | OLAP и хранилища данных | [`hw4-olap-s6/`](hw4-olap-s6/) |
